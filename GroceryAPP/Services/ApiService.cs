@@ -859,7 +859,7 @@ public class ApiService
         }
     }
 
-    public async Task<ApiResponse<List<Order>>> GetOrdersByMobileAsync(string mobileNumber)
+    public async Task<ApiResponse<List<Order>>> GetOrdersByMobileAsync(string mobileNumber, bool includeItems = false)
     {
         if (string.IsNullOrWhiteSpace(mobileNumber))
         {
@@ -878,13 +878,14 @@ public class ApiService
             var normalizedMobile = NormalizeMobileForCompare(mobileNumber);
             var encodedMobile = Uri.EscapeDataString(mobileNumber.Trim());
 
+            var includeItemsValue = includeItems.ToString().ToLowerInvariant();
             var endpoints = new[]
             {
-                $"{AppConfig.OrderController}/mobile/{encodedMobile}?includeItems=false",
-                $"{AppConfig.OrderController}/by-mobile/{encodedMobile}",
-                $"{AppConfig.OrderController}/search?mobileNumber={encodedMobile}&includeItems=false",
-                $"{AppConfig.OrderController}?mobileNumber={encodedMobile}&includeItems=false",
-                $"{AppConfig.OrderController}?mobile={encodedMobile}&includeItems=false",
+                $"{AppConfig.OrderController}/mobile/{encodedMobile}?includeItems={includeItemsValue}",
+                $"{AppConfig.OrderController}/by-mobile/{encodedMobile}?includeItems={includeItemsValue}",
+                $"{AppConfig.OrderController}/search?mobileNumber={encodedMobile}&includeItems={includeItemsValue}",
+                $"{AppConfig.OrderController}?mobileNumber={encodedMobile}&includeItems={includeItemsValue}",
+                $"{AppConfig.OrderController}?mobile={encodedMobile}&includeItems={includeItemsValue}",
                 $"{AppConfig.OrderController}"
             };
 

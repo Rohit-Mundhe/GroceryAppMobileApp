@@ -488,6 +488,30 @@ public partial class CustomerOrderDetailViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasNoItems));
     }
 
+    private string ResolveCustomerMobileNumber()
+    {
+        return Order?.UserMobileNumber
+            ?? _preloadedOrder?.UserMobileNumber
+            ?? string.Empty;
+    }
+
+    private async Task<Order?> TryLoadOrderByMobileAsync(int orderId)
+    {
+        var mobileNumber = ResolveCustomerMobileNumber();
+        if (string.IsNullOrWhiteSpace(mobileNumber))
+        {
+            return null;
+        }
+
+        var mobileOrdersResponse = await _apiService.GetOrdersByMobileAsync(mobileNumber, includeItems: true);
+        if (mobileOrdersResponse?.Success != true || mobileOrdersResponse.Data == null)
+        {
+            return null;
+        }
+
+        return mobileOrdersResponse.Data.FirstOrDefault(order => order.OrderId == orderId);
+    }
+
     protected override async Task InitializeAsync()
     {
         try
@@ -505,12 +529,31 @@ public partial class CustomerOrderDetailViewModel : BaseViewModel
                 var response = await _apiService.GetOrderByIdAsync(OrderId);
                 if (response?.Success == true && response.Data != null)
                 {
-                    ApplyOrderToUi(response.Data);
-                    _preloadedOrder = response.Data;
+                    var resolvedOrder = response.Data;
+                    if (resolvedOrder.OrderItems == null || resolvedOrder.OrderItems.Count == 0)
+                    {
+                        var mobileOrder = await TryLoadOrderByMobileAsync(OrderId);
+                        if (mobileOrder != null)
+                        {
+                            resolvedOrder = mobileOrder;
+                        }
+                    }
+
+                    ApplyOrderToUi(resolvedOrder);
+                    _preloadedOrder = resolvedOrder;
                 }
-                else if (Order == null)
+                else
                 {
-                    SetError(response?.Message ?? "Failed to load order");
+                    var mobileOrder = await TryLoadOrderByMobileAsync(OrderId);
+                    if (mobileOrder != null)
+                    {
+                        ApplyOrderToUi(mobileOrder);
+                        _preloadedOrder = mobileOrder;
+                    }
+                    else if (Order == null)
+                    {
+                        SetError(response?.Message ?? "Failed to load order");
+                    }
                 }
             }
             else if (Order == null)

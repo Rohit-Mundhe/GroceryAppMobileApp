@@ -406,6 +406,13 @@ public class Order
         set { if (!string.IsNullOrWhiteSpace(value)) UserMobileNumber = value; }
     }
 
+    [JsonPropertyName("customerMobileNumber")]
+    public string CustomerMobileNumberAlias
+    {
+        get => UserMobileNumber;
+        set { if (!string.IsNullOrWhiteSpace(value)) UserMobileNumber = value; }
+    }
+
     // Nested user/customer objects returned by some backend endpoints
     private OrderUser _userInfo;
 
